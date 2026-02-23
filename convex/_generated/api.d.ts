@@ -9,6 +9,7 @@
  */
 
 import type * as config from "../config.js";
+import type * as cron from "../cron.js";
 import type * as mutations from "../mutations.js";
 import type * as rooms from "../rooms.js";
 import type * as types from "../types.js";
@@ -22,6 +23,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   config: typeof config;
+  cron: typeof cron;
   mutations: typeof mutations;
   rooms: typeof rooms;
   types: typeof types;

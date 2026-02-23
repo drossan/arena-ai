@@ -1,12 +1,7 @@
-import { cronMutations, mutation } from "./_generated/server";
+import { mutation } from "./_generated/server";
 
-// Cron job to automatically start scheduled battles every minute
-cronMutations("startScheduledBattles", {
-  interval: 60 * 1000, // Run every 60 seconds
-  args: {},
-});
-
-// Cron mutation
+// Cron mutation to automatically start scheduled battles
+// This will be called every minute by Convex cron
 export const startScheduledBattles = mutation({
   args: {},
   handler: async (ctx) => {
