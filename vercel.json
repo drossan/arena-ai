@@ -1,0 +1,8 @@
+{
+  "buildCommand": "npm run build:all",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_CONVEX_URL": "https://compassionate-cuttlefish-596.eu-west-1.convex.cloud"
+  }
+}
