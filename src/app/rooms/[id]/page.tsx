@@ -63,6 +63,44 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
     return () => clearInterval(interval)
   }, [room])
 
+  // Auto-execute turns when debating
+  useEffect(() => {
+    if (!room || room.status !== 'debating') return
+
+    const executeTurn = async () => {
+      // Check if current turn has no messages yet
+      const currentTurn = room.currentTurn || 1
+      const messagesInTurn = room.messages?.filter(
+        m => m.turnNumber === currentTurn
+      ) || []
+
+      if (messagesInTurn.length === 0) {
+        try {
+          // Execute this turn via API
+          const response = await fetch(`/api/battle/${roomId}/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            console.log('Turn executed:', data)
+          }
+        } catch (error) {
+          console.error('Failed to execute turn:', error)
+        }
+      }
+    }
+
+    // Check immediately
+    executeTurn()
+
+    // Poll every 5 seconds for next turn
+    const interval = setInterval(executeTurn, 5000)
+
+    return () => clearInterval(interval)
+  }, [room, roomId])
+
   const handleStartBattle = async () => {
     if (!roomId || !user?._id) return
 

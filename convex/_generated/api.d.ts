@@ -10,8 +10,11 @@
 
 import type * as config from "../config.js";
 import type * as cron from "../cron.js";
+import type * as messages from "../messages.js";
 import type * as mutations from "../mutations.js";
+import type * as participants from "../participants.js";
 import type * as rooms from "../rooms.js";
+import type * as rooms_mutations from "../rooms_mutations.js";
 import type * as types from "../types.js";
 import type * as users from "../users.js";
 
@@ -24,8 +27,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   config: typeof config;
   cron: typeof cron;
+  messages: typeof messages;
   mutations: typeof mutations;
+  participants: typeof participants;
   rooms: typeof rooms;
+  rooms_mutations: typeof rooms_mutations;
   types: typeof types;
   users: typeof users;
 }>;
