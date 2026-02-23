@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #00f3ff;
+  --color-secondary: #bc13fe;
+  --color-accent: #ff9d00;
+  --color-background-light: #0a0a0c;
+  --color-background-dark: #050505;
+}
+
+:root {
+  --primary: #00f3ff;
+  --secondary: #bc13fe;
+  --accent: #ff9d00;
+  --background-light: #0a0a0c;
+  --background-dark: #050505;
+}
+
+@layer base {
+  * {
+    border-color: theme('colors.gray.700');
+  }
+  body {
+    background-color: var(--background-dark);
+    color: white;
+    font-family: var(--font-rajdhani), sans-serif;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-orbitron), sans-serif;
+  }
+}
+
+/* ArenaAI Design System Styles */
+
+/* Neon Border Effects */
+.neon-border-cyan {
+  border: 2px solid #00f3ff;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.4), inset 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+.neon-border-purple {
+  border: 2px solid #bc13fe;
+  box-shadow: 0 0 15px rgba(188, 19, 254, 0.4), inset 0 0 10px rgba(188, 19, 254, 0.2);
+}
+
+.neon-border-amber {
+  border: 2px solid #ff9d00;
+  box-shadow: 0 0 15px rgba(255, 157, 0, 0.4), inset 0 0 10px rgba(255, 157, 0, 0.2);
+}
+
+.neon-border-green {
+  border: 2px solid #39ff14;
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.4), inset 0 0 10px rgba(57, 255, 20, 0.2);
+}
+
+/* Card Gradient */
+.card-gradient {
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+}
+
+/* Scanline Effect */
+.scanline {
+  width: 100%;
+  height: 100px;
+  z-index: 10;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.03) 50%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0.1;
+  position: fixed;
+  bottom: 100%;
+  animation: scanline 10s linear infinite;
+  pointer-events: none;
+}
+
+/* Cyber Grid Background */
+.cyber-grid {
+  background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: center center;
+}
+
+/* Fighter Card Image Styles */
+.fighter-card-image {
+  filter: grayscale(100%) opacity(40%);
+  transition: all 0.5s ease;
+}
+
+.fighter-card-image:hover,
+.group:hover .fighter-card-image {
+  filter: grayscale(0%) opacity(100%);
+  transform: scale(1.1);
+}
+
+/* Fighter Card Border Styles */
+.fighter-card {
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.fighter-card:hover {
+  border-color: var(--card-color);
+  box-shadow: 0 0 20px var(--card-shadow);
+}
+
+/* Corner Accents */
+.corner-accent-tl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+}
+
+.corner-accent-tr {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+}
+
+.corner-accent-bl {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+}
+
+.corner-accent-br {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+}
+
+/* Particle animation for background */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: float 10s infinite;
+  pointer-events: none;
+}
+
+/* Battle Page Styles */
+.grid-overlay {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+.scanlines {
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 0, 0, 0.5) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+.neon-glow-blue {
+  text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+}
+
+.neon-glow-purple {
+  text-shadow: 0 0 10px var(--secondary), 0 0 20px var(--secondary);
+}
+
+.hp-bar-blue {
+  background: linear-gradient(90deg, #00f3ff, #005f6b);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.8);
+}
+
+.hp-bar-purple {
+  background: linear-gradient(270deg, #bc13fe, #5a097a);
+  box-shadow: 0 0 20px rgba(188, 19, 254, 0.8);
+}
+
+.vs-outline {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+  color: transparent;
+}
+
+.divider-glow {
+  box-shadow: 0 0 15px rgba(226, 232, 240, 0.5), 0 0 5px rgba(226, 232, 240, 0.5);
+}
+
+/* Live Indicator */
+.live-indicator::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #ff003c;
+  border-radius: 50%;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 10px #ff003c;
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+/* Admin Panel Styles */
+.neon-panel {
+  border: 2px solid rgba(0, 243, 255, 0.3);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(24px);
+  position: relative;
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.1), inset 0 0 20px rgba(0, 243, 255, 0.05);
+}
+
+.digital-rain {
+  background: linear-gradient(180deg,
+    rgba(0, 243, 255, 0) 0%,
+    rgba(0, 243, 255, 0.05) 50%,
+    rgba(0, 243, 255, 0) 100%);
+  background-size: 100% 200px;
+}
+
+@keyframes matrix {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}

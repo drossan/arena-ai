@@ -1,0 +1,101 @@
+# ArenaAI MCP Configuration
+
+This file documents the MCP servers configured for the ArenaAI project.
+
+## Configured MCP Servers
+
+### Essential (Already Configured)
+
+1. **filesystem** - Read/write project files
+   ```bash
+   npx -y @modelcontextprotocol/server-filesystem /path/to/ArenaAI
+   ```
+
+2. **convex** - Read/write Convex schema, execute mutations/queries
+   ```bash
+   npx -y @convex/mcp-server --convex-dev /path/to/ArenaAI
+   ```
+
+### Highly Useful (Already Configured)
+
+3. **fetch** - Test OpenRouter API calls from CLI
+   ```bash
+   npx -y @modelcontextprotocol/server-fetch
+   ```
+
+4. **github** - Manage PRs, issues, branches
+   ```bash
+   npx -y @modelcontextprotocol/server-github
+   ```
+   Requires: `GITHUB_TOKEN` environment variable
+
+5. **browser** - Visual debugging of animations
+   ```bash
+   npx -y @browsertools/mcp
+   ```
+
+### Optional (Future)
+
+6. **postgres** - For analytics DB (Phase 2+)
+   ```bash
+   npx -y @modelcontextprotocol/server-postgres "postgresql://..."
+   ```
+
+## Setup Instructions
+
+The MCP servers are configured in `~/.claude/settings.json`. To add them:
+
+1. Open `~/.claude/settings.json`
+2. Add the `mcpServers` object (see MCP Configuration section below)
+3. Restart Claude Code
+
+## MCP Configuration
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/danielrossellosanchez/Documents/Desarrollo/Taller IA/ArenaAI"
+      ]
+    },
+    "convex": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@convex/mcp-server",
+        "--convex-dev",
+        "/Users/danielrossellosanchez/Documents/Desarrollo/Taller IA/ArenaAI"
+      ]
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "YOUR_GITHUB_TOKEN_HERE"
+      }
+    },
+    "browser": {
+      "command": "npx",
+      "args": ["-y", "@browsertools/mcp"]
+    }
+  }
+}
+```
+
+## Using MCP Servers
+
+Once configured, Claude Code can use these servers automatically:
+
+- **File operations**: Reading/writing code via `filesystem` MCP
+- **Convex queries**: Debugging real-time data via `convex` MCP
+- **API testing**: Calling OpenRouter via `fetch` MCP
+- **GitHub integration**: Managing PRs via `github` MCP
+- **Browser testing**: Visual debugging via `browser` MCP
