@@ -49,10 +49,7 @@ export async function POST(
     })
 
     // Create response with session cookie
-    const response = NextResponse.json({
-      success: true,
-      ...result,
-    })
+    const response = NextResponse.json(result)
 
     // Set session cookie if it was new
     if (!request.cookies.get('arena_session')?.value) {

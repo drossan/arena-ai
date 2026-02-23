@@ -30,6 +30,31 @@ export const save = mutation({
   },
 })
 
+// Update message content (for streaming)
+export const updateContent = mutation({
+  args: {
+    messageId: v.id('messages'),
+    content: v.string(),
+    isStreaming: v.optional(v.boolean()),
+    attackType: v.optional(v.string()),
+    damage: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const updateData: any = { content: args.content }
+    if (args.isStreaming !== undefined) {
+      updateData.isStreaming = args.isStreaming
+    }
+    if (args.attackType !== undefined) {
+      updateData.attackType = args.attackType
+    }
+    if (args.damage !== undefined) {
+      updateData.damage = args.damage
+    }
+    await ctx.db.patch(args.messageId, updateData)
+    return { success: true }
+  },
+})
+
 // Get messages for a room
 export const list = query({
   args: {

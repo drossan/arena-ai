@@ -94,7 +94,12 @@ export async function POST(
         roundNumber: m.roundNumber,
       }))
 
-    // Generate argument using OpenRouter
+    // Generate argument using OpenRouter with streaming
+    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
+    if (!OPENROUTER_API_KEY) {
+      return NextResponse.json({ error: 'OpenRouter API key not configured' }, { status: 500 })
+    }
+
     // Use free router - automatically selects best available free model
     const freeModel = 'openrouter/free'
 
@@ -119,19 +124,89 @@ ${previousContext.map(m => `- ${m.participantId === fighterA._id ? fighterA.mode
 
 You are Side ${currentFighter.side}. Present your argument. Be powerful, be specific, and win this round!`
 
-    // Call OpenRouter API with free model
-    let argumentContent: string
+    // Create message first with empty content
+    const messageId = await fetchMutation(api.messages.save, {
+      roomId,
+      participantId: currentFighter._id,
+      content: '',
+      turnNumber: currentTurn,
+      roundNumber: currentRound,
+      isStreaming: true,
+    })
+
+    let argumentContent = ''
+
     try {
-      const client = getOpenRouterClient()
-      const result = await client.chat({
-        model: freeModel,
-        systemPrompt,
-        prompt: userPrompt,
-        temperature: 0.8,
-        maxTokens: 500,
+      // Stream the response using fetch directly with OpenRouter API
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+          'X-Title': 'ArenaAI',
+        },
+        body: JSON.stringify({
+          model: freeModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.8,
+          max_tokens: 500,
+          stream: true,
+        }),
       })
 
-      argumentContent = result.content || 'No response generated'
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText)
+      }
+
+      // Read the stream
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6)
+              if (data === '[DONE]') continue
+
+              try {
+                const parsed = JSON.parse(data)
+                const content = parsed.choices?.[0]?.delta?.content
+                if (content) {
+                  argumentContent += content
+
+                  // Update message in Convex with new content
+                  await fetchMutation(api.messages.updateContent, {
+                    messageId,
+                    content: argumentContent,
+                    isStreaming: true,
+                  })
+                }
+              } catch {
+                // Skip invalid JSON
+              }
+            }
+          }
+        }
+      }
+
+      // Finalize streaming
+      await fetchMutation(api.messages.updateContent, {
+        messageId,
+        content: argumentContent,
+        isStreaming: false,
+      })
 
       if (!argumentContent || argumentContent === 'No response generated') {
         console.error('No content generated from OpenRouter')
@@ -142,6 +217,14 @@ You are Side ${currentFighter.side}. Present your argument. Be powerful, be spec
       }
     } catch (apiError: any) {
       console.error('OpenRouter API error:', apiError)
+
+      // Stop streaming on error
+      await fetchMutation(api.messages.updateContent, {
+        messageId,
+        content: argumentContent || 'Error generating response',
+        isStreaming: false,
+      })
+
       return NextResponse.json(
         { error: 'Failed to generate argument', details: apiError.message || String(apiError) },
         { status: 500 }
@@ -151,16 +234,13 @@ You are Side ${currentFighter.side}. Present your argument. Be powerful, be spec
     // Analyze the argument for attack type and damage
     const { type: attackType, damage } = analyzeArgument(argumentContent)
 
-    // Save message to Convex
-    const messageId = await fetchMutation(api.messages.save, {
-      roomId,
-      participantId: currentFighter._id,
+    // Update message with final content, attack type and damage
+    await fetchMutation(api.messages.updateContent, {
+      messageId,
       content: argumentContent,
-      turnNumber: currentTurn,
-      roundNumber: currentRound,
+      isStreaming: false,
       attackType,
       damage,
-      isStreaming: false,
     })
 
     // Apply damage to opponent
