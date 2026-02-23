@@ -99,8 +99,8 @@ export async function POST(
       return NextResponse.json({ error: 'OpenRouter API key not configured' }, { status: 500 })
     }
 
-    // Use free model for testing
-    const freeModel = 'meta-llama/llama-3-8b-instruct:free'
+    // Use free router - automatically selects best available free model
+    const freeModel = 'openrouter/free'
 
     const systemPrompt = `You are ${currentFighter.modelName}, an AI warrior in the ArenaAI battle arena.
 
