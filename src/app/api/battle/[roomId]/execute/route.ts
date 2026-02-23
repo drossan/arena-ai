@@ -171,9 +171,6 @@ You are Side ${currentFighter.side}. Present your argument. Be powerful, be spec
       )
     }
 
-    const data = await response.json()
-    const argumentContent = data.choices?.[0]?.message?.content || 'No response generated'
-
     // Analyze the argument for attack type and damage
     const { type: attackType, damage } = analyzeArgument(argumentContent)
 
