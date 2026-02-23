@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Id } from '@/convex/_generated/dataModel'
 import { fetchMutation, fetchQuery } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
-import { OpenRouter } from '@openrouter/sdk'
+import { getOpenRouterClient } from '@/lib/openrouter'
 
 // Simple referee analysis (in production, use AI model)
 function analyzeArgument(content: string): { type: string; damage: number } {
@@ -94,16 +94,7 @@ export async function POST(
         roundNumber: m.roundNumber,
       }))
 
-    // Generate argument using OpenRouter SDK
-    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
-    if (!OPENROUTER_API_KEY) {
-      return NextResponse.json({ error: 'OpenRouter API key not configured' }, { status: 500 })
-    }
-
-    const openrouter = new OpenRouter({
-      apiKey: OPENROUTER_API_KEY,
-    })
-
+    // Generate argument using OpenRouter
     // Use free router - automatically selects best available free model
     const freeModel = 'openrouter/free'
 
@@ -128,20 +119,19 @@ ${previousContext.map(m => `- ${m.participantId === fighterA._id ? fighterA.mode
 
 You are Side ${currentFighter.side}. Present your argument. Be powerful, be specific, and win this round!`
 
-    // Call OpenRouter API with free model using SDK
+    // Call OpenRouter API with free model
     let argumentContent: string
     try {
-      const response = await openrouter.chat.completions.create({
+      const client = getOpenRouterClient()
+      const result = await client.chat({
         model: freeModel,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
+        systemPrompt,
+        prompt: userPrompt,
         temperature: 0.8,
-        max_tokens: 500,
+        maxTokens: 500,
       })
 
-      argumentContent = response.choices?.[0]?.message?.content || 'No response generated'
+      argumentContent = result.content || 'No response generated'
 
       if (!argumentContent || argumentContent === 'No response generated') {
         console.error('No content generated from OpenRouter')
