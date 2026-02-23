@@ -103,11 +103,13 @@ export const leaveRoom = mutation({
 export const startBattle = mutation({
   args: {
     roomId: v.id("rooms"),
-    adminPassword: v.string(),
+    userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    if (args.adminPassword !== ADMIN_PASSWORD) {
-      throw new Error("Invalid admin password");
+    // Verify user is admin
+    const user = await ctx.db.get(args.userId);
+    if (!user || user.role !== "admin") {
+      throw new Error("Only admins can start battles");
     }
 
     const room = await ctx.db.get(args.roomId);

@@ -7,6 +7,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Id } from '@/convex/_generated/dataModel'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
 
 const ATTACK_INFO: Record<string, { emoji: string; name: string; icon: string }> = {
   LIGHTNING_STRIKE: { emoji: '⚡', name: 'LIGHTNING STRIKE', icon: 'flash_on' },
@@ -17,6 +18,7 @@ const ATTACK_INFO: Record<string, { emoji: string; name: string; icon: string }>
 
 function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
   const sessionIdRef = useRef<string | undefined>(undefined)
+  const { user, isAuthenticated } = useAuth()
 
   const room = useQuery(api.rooms.getRoom, { roomId })
   const joinRoom = useMutation(api.mutations.joinRoom)
@@ -24,7 +26,6 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
   const startBattle = useMutation(api.mutations.startBattle)
 
   const [timeLeft, setTimeLeft] = useState<number>(0)
-  const [adminPassword, setAdminPassword] = useState('')
   const [supportA, setSupportA] = useState(50)
   const [supportB, setSupportB] = useState(50)
 
@@ -63,10 +64,10 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
   }, [room])
 
   const handleStartBattle = async () => {
-    if (!roomId) return
+    if (!roomId || !user?._id) return
 
     try {
-      await startBattle({ roomId, adminPassword })
+      await startBattle({ roomId, userId: user._id as any })
       window.location.reload()
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error starting battle')
@@ -163,30 +164,31 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
             </div>
 
             {/* Admin Controls */}
-            <div className="mt-8 p-6 bg-white/5 border border-white/10 rounded-lg max-w-md mx-auto">
-              <h3 className="text-sm font-display font-bold text-gray-400 mb-4 uppercase tracking-widest flex items-center gap-2">
-                <span className="material-symbols-outlined text-base">admin_panel_settings</span>
-                Admin Controls
-              </h3>
-              <div className="flex gap-3 items-center justify-center">
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Admin password"
-                  className="px-4 py-3 bg-black/60 border border-white/20 rounded text-white placeholder-gray-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all font-body"
-                />
-                <button
-                  onClick={handleStartBattle}
-                  className="px-6 py-3 bg-accent/20 border border-accent/50 rounded-lg text-accent hover:bg-accent/30 transition-all font-display font-bold uppercase tracking-widest whitespace-nowrap"
-                >
-                  ⚔️ Start Now
-                </button>
+            {isAuthenticated && user?.role === 'admin' ? (
+              <div className="mt-8 p-6 bg-white/5 border border-white/10 rounded-lg max-w-md mx-auto">
+                <h3 className="text-sm font-display font-bold text-gray-400 mb-4 uppercase tracking-widest flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">admin_panel_settings</span>
+                  Admin Controls
+                </h3>
+                <div className="flex gap-3 items-center justify-center">
+                  <button
+                    onClick={handleStartBattle}
+                    className="px-6 py-3 bg-accent/20 border border-accent/50 rounded-lg text-accent hover:bg-accent/30 transition-all font-display font-bold uppercase tracking-widest whitespace-nowrap"
+                  >
+                    ⚔️ Start Now
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-3 text-center font-display uppercase tracking-wider">
+                  Or wait for the scheduled time
+                </p>
               </div>
-              <p className="text-xs text-gray-500 mt-3 text-center font-display uppercase tracking-wider">
-                Or wait for the scheduled time
-              </p>
-            </div>
+            ) : (
+              <div className="mt-8 p-6 bg-yellow-500/5 border border-yellow-500/20 rounded-lg max-w-md mx-auto text-center">
+                <p className="text-xs text-yellow-400 uppercase tracking-widest">
+                  Only admins can start battles. Login as admin to start.
+                </p>
+              </div>
+            )}
 
             {/* Share Link */}
             <div className="mt-12">
@@ -225,24 +227,31 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
             <p className="text-gray-400 mb-12 text-lg">
               Waiting for admin to start the battle...
             </p>
-            <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg p-8">
-              <input
-                type="password"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="Admin password"
-                className="w-full px-5 py-4 bg-black/60 border border-white/20 rounded text-white placeholder-gray-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all font-body text-lg mb-4"
-              />
-              <button
-                onClick={handleStartBattle}
-                className="w-full px-8 py-5 bg-accent/20 border-2 border-accent rounded-lg text-accent hover:bg-accent/30 transition-all text-xl font-display font-black uppercase tracking-widest"
-              >
-                ⚔️ Start Battle
-              </button>
-              <p className="text-xs text-gray-500 mt-4 font-display uppercase tracking-wider">
-                Admin password required
-              </p>
-            </div>
+            {isAuthenticated && user?.role === 'admin' ? (
+              <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg p-8">
+                <button
+                  onClick={handleStartBattle}
+                  className="w-full px-8 py-5 bg-accent/20 border-2 border-accent rounded-lg text-accent hover:bg-accent/30 transition-all text-xl font-display font-black uppercase tracking-widest"
+                >
+                  ⚔️ Start Battle
+                </button>
+                <p className="text-xs text-gray-500 mt-4 font-display uppercase tracking-wider">
+                  Logged in as {user.displayName}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-8">
+                <p className="text-yellow-400 text-sm font-display uppercase tracking-widest">
+                  Only admins can start battles
+                </p>
+                <Link
+                  href="/"
+                  className="inline-block mt-4 text-xs text-primary hover:text-primary/70 uppercase tracking-widest"
+                >
+                  Login as Admin
+                </Link>
+              </div>
+            )}
           </div>
         </main>
       </>
