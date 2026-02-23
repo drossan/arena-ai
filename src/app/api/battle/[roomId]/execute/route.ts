@@ -100,7 +100,7 @@ export async function POST(
     }
 
     // Use free model for testing
-    const freeModel = 'microsoft/phi-3-medium-128k-instruct:free'
+    const freeModel = 'meta-llama/llama-3-8b-instruct:free'
 
     const systemPrompt = `You are ${currentFighter.modelName}, an AI warrior in the ArenaAI battle arena.
 
