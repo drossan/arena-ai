@@ -21,6 +21,15 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
   const { user, isAuthenticated } = useAuth()
 
   const room = useQuery(api.rooms.getRoom, { roomId })
+  const roundVotes = useQuery(api.votes.getRoundVotes, {
+    roomId,
+    roundNumber: room?.currentRound || 1,
+  })
+  const hasVoted = useQuery(api.votes.hasVoted, {
+    roomId,
+    roundNumber: room?.currentRound || 1,
+    sessionId: sessionIdRef.current || '',
+  })
   const joinRoom = useMutation(api.mutations.joinRoom)
   const leaveRoom = useMutation(api.mutations.leaveRoom)
   const startBattle = useMutation(api.mutations.startBattle)
@@ -28,6 +37,7 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [supportA, setSupportA] = useState(50)
   const [supportB, setSupportB] = useState(50)
+  const [voting, setVoting] = useState(false)
 
   // Generate and store session ID
   useEffect(() => {
@@ -109,6 +119,55 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
       window.location.reload()
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error starting battle')
+    }
+  }
+
+  const handleVote = async (participantId: Id<'participants'>) => {
+    if (!roomId || voting) return
+
+    setVoting(true)
+    try {
+      const response = await fetch(`/api/battle/${roomId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participantId,
+          roundNumber: room?.currentRound || 1,
+        }),
+      })
+
+      if (response.ok) {
+        window.location.reload()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to vote')
+      }
+    } catch (error) {
+      alert('Failed to vote')
+    } finally {
+      setVoting(false)
+    }
+  }
+
+  const handleEndVoting = async () => {
+    if (!roomId) return
+
+    try {
+      const response = await fetch(`/api/battle/${roomId}/end-voting`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roundNumber: room?.currentRound || 1,
+        }),
+      })
+
+      if (response.ok) {
+        window.location.reload()
+      } else {
+        alert('Failed to end voting')
+      }
+    } catch (error) {
+      alert('Failed to end voting')
     }
   }
 
@@ -496,6 +555,92 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
           </div>
         </div>
       </main>
+
+      {/* Voting Overlay */}
+      {room.status === 'voting' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-2xl">
+          <div className="max-w-4xl w-full mx-8">
+            <h2 className="font-display text-5xl font-black text-center text-accent mb-4 tracking-wider">
+              🗳️ VOTING TIME
+            </h2>
+            <p className="text-center text-gray-400 mb-12 font-display uppercase tracking-widest">
+              Round {room.currentRound || 1} - Cast your vote!
+            </p>
+
+            <div className="grid grid-cols-2 gap-8 mb-12">
+              {/* Fighter A Vote Card */}
+              <button
+                onClick={() => participantA && handleVote(participantA._id)}
+                disabled={hasVoted || voting}
+                className={`group relative p-8 rounded-2xl border-2 transition-all ${
+                  hasVoted
+                    ? 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
+                    : 'bg-primary/10 border-primary/50 hover:bg-primary/20 hover:scale-105'
+                }`}
+              >
+                <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-2xl"></div>
+                <div className="relative">
+                  <h3 className="font-display text-3xl font-black text-primary mb-4">
+                    {participantA?.modelName || 'Fighter A'}
+                  </h3>
+                  <div className="text-6xl mb-4">
+                    {roundVotes?.byParticipant?.[participantA?._id.toString() || ''] || 0}
+                  </div>
+                  <p className="text-sm text-gray-400 font-display uppercase tracking-widest">
+                    {roundVotes?.total || 0} votes cast
+                  </p>
+                  {hasVoted && (
+                    <div className="mt-4 text-primary font-display text-sm uppercase tracking-wider">
+                      ✓ You voted
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Fighter B Vote Card */}
+              <button
+                onClick={() => participantB && handleVote(participantB._id)}
+                disabled={hasVoted || voting}
+                className={`group relative p-8 rounded-2xl border-2 transition-all ${
+                  hasVoted
+                    ? 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
+                    : 'bg-secondary/10 border-secondary/50 hover:bg-secondary/20 hover:scale-105'
+                }`}
+              >
+                <div className="absolute inset-0 bg-secondary/5 blur-3xl rounded-2xl"></div>
+                <div className="relative">
+                  <h3 className="font-display text-3xl font-black text-secondary mb-4 text-right">
+                    {participantB?.modelName || 'Fighter B'}
+                  </h3>
+                  <div className="text-6xl mb-4 text-right">
+                    {roundVotes?.byParticipant?.[participantB?._id.toString() || ''] || 0}
+                  </div>
+                  <p className="text-sm text-gray-400 font-display uppercase tracking-widest text-right">
+                    {roundVotes?.total || 0} votes cast
+                  </p>
+                  {hasVoted && (
+                    <div className="mt-4 text-secondary font-display text-sm uppercase tracking-wider text-right">
+                      You voted ✓
+                    </div>
+                  )}
+                </div>
+              </button>
+            </div>
+
+            {/* Admin: End Voting Button */}
+            {isAuthenticated && user?.role === 'admin' && (
+              <div className="text-center">
+                <button
+                  onClick={handleEndVoting}
+                  className="px-12 py-4 bg-accent/20 border-2 border-accent rounded-lg text-accent hover:bg-accent/30 transition-all font-display font-black uppercase tracking-widest"
+                >
+                  ⚔️ End Voting & Continue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer with Support Bars */}
       <footer className="fixed bottom-0 left-0 w-full p-8 bg-black/95 backdrop-blur-2xl border-t border-white/10 z-30">

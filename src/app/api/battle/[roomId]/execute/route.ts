@@ -183,15 +183,8 @@ You are Side ${currentFighter.side}. Present your argument. Be powerful, be spec
 
     // Check if round is complete
     if (nextTurn > totalTurns) {
-      // Move to voting or next round
-      if (currentRound >= 3) {
-        // Battle finished
-        updateData.status = 'finished'
-      } else {
-        // Move to next round
-        updateData.currentRound = currentRound + 1
-        updateData.currentTurn = (currentRound * 2) + 1
-      }
+      // Move to voting phase
+      updateData.status = 'voting'
     }
 
     await fetchMutation(api.rooms.updateRoom, {
