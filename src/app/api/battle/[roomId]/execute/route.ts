@@ -100,7 +100,7 @@ export async function POST(
     }
 
     // Use free model for testing
-    const freeModel = 'google/gemma-2-9b-it:free'
+    const freeModel = 'meta-llama/llama-3-8b-instruct:free'
 
     const systemPrompt = `You are ${currentFighter.modelName}, an AI warrior in the ArenaAI battle arena.
 
@@ -123,6 +123,12 @@ ${previousContext.map(m => `- ${m.participantId === fighterA._id ? fighterA.mode
 
 You are Side ${currentFighter.side}. Present your argument. Be powerful, be specific, and win this round!`
 
+    // Check API key
+    if (!OPENROUTER_API_KEY) {
+      console.error('OPENROUTER_API_KEY not configured')
+      return NextResponse.json({ error: 'OpenRouter API key not configured' }, { status: 500 })
+    }
+
     // Call OpenRouter API with free model
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -144,9 +150,25 @@ You are Side ${currentFighter.side}. Present your argument. Be powerful, be spec
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('OpenRouter error:', error)
-      return NextResponse.json({ error: 'Failed to generate argument' }, { status: 500 })
+      const errorText = await response.text()
+      console.error('OpenRouter API error:', errorText)
+      return NextResponse.json(
+        { error: 'Failed to generate argument', details: errorText },
+        { status: 500 }
+      )
+    }
+
+    const data = await response.json()
+    console.log('OpenRouter response:', data)
+
+    const argumentContent = data.choices?.[0]?.message?.content || 'No response generated'
+
+    if (!argumentContent || argumentContent === 'No response generated') {
+      console.error('No content generated from OpenRouter')
+      return NextResponse.json(
+        { error: 'No response from AI model' },
+        { status: 500 }
+      )
     }
 
     const data = await response.json()
