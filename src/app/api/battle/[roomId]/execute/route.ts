@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Id } from '@/convex/_generated/dataModel'
 import { fetchMutation, fetchQuery } from 'convex/nextjs'
 import { api } from '@/convex/_generated/api'
+import { OpenRouter } from '@openrouter/sdk'
 
 // Simple referee analysis (in production, use AI model)
 function analyzeArgument(content: string): { type: string; damage: number } {
@@ -93,11 +94,15 @@ export async function POST(
         roundNumber: m.roundNumber,
       }))
 
-    // Generate argument using OpenRouter
+    // Generate argument using OpenRouter SDK
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
     if (!OPENROUTER_API_KEY) {
       return NextResponse.json({ error: 'OpenRouter API key not configured' }, { status: 500 })
     }
+
+    const openrouter = new OpenRouter({
+      apiKey: OPENROUTER_API_KEY,
+    })
 
     // Use free router - automatically selects best available free model
     const freeModel = 'openrouter/free'
@@ -123,50 +128,32 @@ ${previousContext.map(m => `- ${m.participantId === fighterA._id ? fighterA.mode
 
 You are Side ${currentFighter.side}. Present your argument. Be powerful, be specific, and win this round!`
 
-    // Check API key
-    if (!OPENROUTER_API_KEY) {
-      console.error('OPENROUTER_API_KEY not configured')
-      return NextResponse.json({ error: 'OpenRouter API key not configured' }, { status: 500 })
-    }
-
-    // Call OpenRouter API with free model
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-        'X-Title': 'ArenaAI',
-      },
-      body: JSON.stringify({
-        model: freeModel, // Use free model for testing
+    // Call OpenRouter API with free model using SDK
+    let argumentContent: string
+    try {
+      const response = await openrouter.chat.completions.create({
+        model: freeModel,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.8,
         max_tokens: 500,
-      }),
-    })
+      })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('OpenRouter API error:', errorText)
+      argumentContent = response.choices?.[0]?.message?.content || 'No response generated'
+
+      if (!argumentContent || argumentContent === 'No response generated') {
+        console.error('No content generated from OpenRouter')
+        return NextResponse.json(
+          { error: 'No response from AI model' },
+          { status: 500 }
+        )
+      }
+    } catch (apiError: any) {
+      console.error('OpenRouter API error:', apiError)
       return NextResponse.json(
-        { error: 'Failed to generate argument', details: errorText },
-        { status: 500 }
-      )
-    }
-
-    const data = await response.json()
-    console.log('OpenRouter response:', data)
-
-    const argumentContent = data.choices?.[0]?.message?.content || 'No response generated'
-
-    if (!argumentContent || argumentContent === 'No response generated') {
-      console.error('No content generated from OpenRouter')
-      return NextResponse.json(
-        { error: 'No response from AI model' },
+        { error: 'Failed to generate argument', details: apiError.message || String(apiError) },
         { status: 500 }
       )
     }
