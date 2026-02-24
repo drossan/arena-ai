@@ -38,6 +38,7 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
   const [supportA, setSupportA] = useState(50)
   const [supportB, setSupportB] = useState(50)
   const [voting, setVoting] = useState(false)
+  const [commentary, setCommentary] = useState<any>(null)
 
   // Generate and store session ID
   useEffect(() => {
@@ -110,6 +111,25 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
 
     return () => clearInterval(interval)
   }, [room, roomId])
+
+  // Load commentary when battle finishes
+  useEffect(() => {
+    if (!room || room.status !== 'finished' || commentary) return
+
+    const loadCommentary = async () => {
+      try {
+        const response = await fetch(`/api/battle/${roomId}/commentary`)
+        if (response.ok) {
+          const data = await response.json()
+          setCommentary(data)
+        }
+      } catch (error) {
+        console.error('Failed to load commentary:', error)
+      }
+    }
+
+    loadCommentary()
+  }, [room, roomId, commentary])
 
   const handleStartBattle = async () => {
     if (!roomId || !user?._id) return
@@ -398,12 +418,61 @@ function BattleRoomContent({ roomId }: { roomId: Id<'rooms'> }) {
 
       {/* Winner Overlay */}
       {room.status === 'finished' && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/90">
-          <div className="text-center">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/90 overflow-y-auto">
+          <div className="text-center max-w-4xl mx-8 py-12">
             <div className="text-9xl mb-4">🏆</div>
             <h2 className="font-display text-5xl font-black text-accent tracking-wider mb-8">
               {hpA > hpB ? (participantA?.modelName || 'Fighter A') : hpB > hpA ? (participantB?.modelName || 'Fighter B') : 'DRAW'} WINS!
             </h2>
+
+            {/* Commentary Section */}
+            {commentary ? (
+              <div className="mb-8 space-y-6">
+                {/* Battle Summary */}
+                <div className="bg-black/60 backdrop-blur-md border border-accent/30 rounded-lg p-6">
+                  <h3 className="font-display text-sm uppercase tracking-widest text-accent mb-3">
+                    ⚡ Battle Summary
+                  </h3>
+                  <p className="text-white text-lg leading-relaxed">{commentary.summary}</p>
+                </div>
+
+                {/* Best Argument */}
+                <div className="bg-black/60 backdrop-blur-md border border-primary/30 rounded-lg p-6">
+                  <h3 className="font-display text-sm uppercase tracking-widest text-primary mb-3">
+                    💎 Best Argument
+                  </h3>
+                  <p className="text-white text-lg leading-relaxed">{commentary.highlight}</p>
+                </div>
+
+                {/* Winner Announcement */}
+                <div className="bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-md border border-white/30 rounded-lg p-6">
+                  <h3 className="font-display text-sm uppercase tracking-widest text-white mb-3">
+                    🎤 Official Winner
+                  </h3>
+                  <p className="text-2xl font-black text-white">{commentary.winner}</p>
+                </div>
+
+                {/* Shareable Card */}
+                {commentary.shareableCard && (
+                  <div className="bg-gradient-to-br from-accent/20 via-purple-500/20 to-primary/20 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                    <h3 className="font-display text-xs uppercase tracking-widest text-gray-400 mb-4">
+                      📱 Shareable Card
+                    </h3>
+                    <div className="text-center space-y-2">
+                      <p className="font-display text-xl font-bold text-white">{commentary.shareableCard.title}</p>
+                      <p className="font-mono text-accent">{commentary.shareableCard.finalScore}</p>
+                      <p className="text-sm text-gray-300 italic">"{commentary.shareableCard.bestArgument}"</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mb-8 text-center">
+                <div className="inline-block animate-spin text-4xl mb-4">⏳</div>
+                <p className="text-gray-400 font-display uppercase tracking-widest">Generating commentary...</p>
+              </div>
+            )}
+
             <div className="flex gap-4 justify-center">
               <Link
                 href="/rooms"
