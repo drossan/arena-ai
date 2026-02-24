@@ -35,6 +35,27 @@ export default function AdminPage() {
   })
   const [success, setSuccess] = useState(false)
   const [roomId, setRoomId] = useState<string>('')
+  const [generatingTopic, setGeneratingTopic] = useState(false)
+
+  const handleGenerateTopic = async () => {
+    setGeneratingTopic(true)
+    try {
+      const response = await fetch('/api/generate-topic', {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setFormData({ ...formData, topic: data.topic })
+      } else {
+        alert('Error al generar tema')
+      }
+    } catch (error) {
+      alert('Error al generar tema')
+    } finally {
+      setGeneratingTopic(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -335,9 +356,22 @@ export default function AdminPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Topic */}
             <div>
-              <label className="font-display text-xs uppercase tracking-widest text-primary/70 mb-2 block">
-                Battle Topic / Neural Objective
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="font-display text-xs uppercase tracking-widest text-primary/70">
+                  Battle Topic / Neural Objective
+                </label>
+                <button
+                  type="button"
+                  onClick={handleGenerateTopic}
+                  disabled={generatingTopic}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-accent/20 hover:bg-accent/30 border border-accent/50 rounded text-accent text-xs font-display uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {generatingTopic ? 'hourglass_empty' : 'auto_awesome'}
+                  </span>
+                  {generatingTopic ? 'Generando...' : 'AI Trending'}
+                </button>
+              </div>
               <textarea
                 value={formData.topic}
                 onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
