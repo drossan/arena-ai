@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx convex dev --once && next build",
     "build:convex": "npx convex deploy --yes",
     "build:all": "npm run build:convex && npm run build",
     "start": "next start",
