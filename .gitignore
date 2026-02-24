@@ -36,6 +36,5 @@ next-env.d.ts
 
 # Convex
 .convex/
-convex/_generated/
 
 .idea/
